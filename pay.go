@@ -37,6 +37,7 @@ func pay(price float32, inserted []denomination) (map[denomination]int, error) {
 	return returnDenominations, nil
 }
 
+// processPaymentInCents expects input price to be in cents. This functino performs very rudimentary transaction management.
 func processPaymentInCents(ctx context.Context, reg registerer[denomination], price int, inserted []denomination) ([]denomination, error) {
 	insertedAmount := 0
 	for _, d := range inserted {
@@ -55,7 +56,8 @@ func processPaymentInCents(ctx context.Context, reg registerer[denomination], pr
 	if err != nil {
 		return nil, err
 	}
-	if len(ds) == 0 {
+	if len(ds) == 0 { // not enough denomination type to break return amount
+		// return the exact denomination inserted earlier
 		for _, i := range inserted {
 			d, _ := reg.Withdraw(ctx, int(i))
 			ds = append(ds, d...)
