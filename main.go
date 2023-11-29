@@ -9,6 +9,13 @@ import (
 	"net/http"
 )
 
+// registerer is an interface that must be satisfied by a type providing register functionality.
+// This is a generic type bounded by unsiged or floating numeric types.
+type registerer[K constraints.Unsigned | constraints.Float] interface {
+	Put(ctx context.Context, ds []K) error
+	Withdraw(ctx context.Context, amount int) ([]K, error)
+}
+
 // RequestData is used to decode incoming request data.
 type RequestData struct {
 	TransactionID     *string        `json:"transaction_id"`
@@ -46,20 +53,19 @@ func main() {
 	p := paymentProcessor{
 		trStore:  make(map[string]*Transaction),
 		register: reg,
-	}
-  // normally, I would be using an existing library here
+	}// normally, I would be using an existing library here
 	http.HandleFunc("/transaction", p.transactionHandler())
 
-  // for authentication, middleware based routing can be used as a simple yet effective solution,
-  // e.g. access to admin panel can be guarded by another middleware handler
-  //
-  // secureEndpoint(http.HandleFunc("/admin", p.admin()), ...)
-  //
-  // with `secureEndpoint` being a function that chains the handler func provided to it as an argument.
+	// for authentication, middleware based routing can be used as a simple yet effective solution,
+	// e.g. access to admin panel can be guarded by another middleware handler
+	//
+	// secureEndpoint(http.HandleFunc("/admin", p.admin()), ...)
+	//
+	// with `secureEndpoint` being a function that chains the handler func provided to it as an argument.
 
 	// Start the server and listen on port 8080
-  // todo: create custom server with tweaked timeouts. This typically looks like:
-  // server := &http.Server{
+	// todo: create custom server with tweaked timeouts. This typically looks like:
+	// server := &http.Server{
 	// 	Addr:              cfg.Address,
 	// 	Handler:           router,
 	// 	ReadTimeout:       cfg.ReadTimeout,
@@ -70,7 +76,7 @@ func main() {
 	port := 8080
 	fmt.Printf("Server is listening on port %d...\n", port)
 
-  // todo: implement listener for OS signals, graceful shutdown
+	// todo: implement listener for OS signals, graceful shutdown
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 
 	// Check for errors when starting the server
@@ -116,9 +122,10 @@ func (p *paymentProcessor) transactionHandler() http.HandlerFunc {
 		} else {
 			newID := uuid.New().String()
 
-      // todo: 
-      //   1. implement a more robust store
-      //   2. put this store behind an interface
+      
+			// todo: 
+			//   1. implement a more robust store
+			//   2. put this store behind an interface
 			p.trStore[newID] = &Transaction{
 				ID:            newID,
 				TotalInserted: requestData.Denominations,
